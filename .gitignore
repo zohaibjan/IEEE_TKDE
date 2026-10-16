@@ -1,0 +1,12 @@
+# MATLAB editor and operating-system files
+*.asv
+*.m~
+.DS_Store
+Thumbs.db
+slprj/
+codegen/
+
+# New experiment outputs; previously committed results remain historical records.
+results*.csv
+results*.mat
+resuls.mat

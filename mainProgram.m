@@ -1,4 +1,4 @@
-function program = mainProgram()
+function mainProgram()
 
 addpath(genpath('P-Data'));
 Problem={'adult','australian','balance','banknote',...
@@ -21,7 +21,7 @@ params.trainFunctionDiscriminant = {'pseudoLinear','pseudoQuadratic'};
 params.kernelFunctionSVM={'gaussian','polynomial','linear'};
 
 %% MAIN LOOP
-parfor i = 1:length(Problem)
+for i = 1:length(Problem)
     for eachClass = 2:10
         p_name = Problem{i};
         results = runTraining(p_name, params, eachClass);

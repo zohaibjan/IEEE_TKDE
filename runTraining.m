@@ -1,5 +1,5 @@
 function results = runTraining(p_name , params, class)
-warning('off','all');
+
 params.eachClass = class;
 nonOptimized_Accuracy = [];
 optimized_Accuracy = [];

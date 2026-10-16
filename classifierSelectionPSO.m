@@ -1,7 +1,7 @@
 function obj=classifierSelectionPSO(classifierList, testData)
-warning('off','all');
+
 try
-    warning('off','all')
+
     allPredictions = psoPredict(classifierList, testData);
     %set optimization function to PSOAF
     fun = @PSOAF;

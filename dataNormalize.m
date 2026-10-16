@@ -1,26 +1,27 @@
-function [X]=dataNormalize(D,type)
-    if type==1
-        max_x=max(D);
-        min_x=min(D);
-        if any(max_x - min_x ==0)
-            X=D;
-            return
-        end
-        X=(D-repmat(min_x,size(D,1),1))./(repmat(max_x,size(D,1),1)-repmat(min_x,size(D,1),1));
-    elseif type == 2
-        mean_x = mean(D);
-        std_x = std(D);
-        if any(mean_x == 0)
-            X = D;
-            return;
-        end
-          X=(D-repmat(mean_x,size(D,1),1))./(repmat(std_x,size(D,1),1));
-    elseif type == 3 %SAMS NORM
-        for i = 1:length(D(1,:))
-            D(:,i) = mapminmax(D(:,i).').';
-            X = D;
-        end 
-    else
-        X=mapminmax(D);
+function X = dataNormalize(D, type)
+%dataNormalize Normalize columns; constant columns map to zero in modes 1 and 2.
+% Modes: 1 = min/max, 2 = sample z-score, 3 = column-wise mapminmax.
+% Other modes preserve the historical row-wise mapminmax behaviour.
+if isempty(D)
+    X = D;
+    return;
+end
+if type == 1
+    offset = min(D, [], 1);
+    scale = max(D, [], 1) - offset;
+    scale(scale == 0) = 1;
+    X = bsxfun(@rdivide, bsxfun(@minus, D, offset), scale);
+elseif type == 2
+    offset = mean(D, 1);
+    scale = std(D, 0, 1);
+    scale(scale == 0) = 1;
+    X = bsxfun(@rdivide, bsxfun(@minus, D, offset), scale);
+elseif type == 3
+    X = D;
+    for i = 1:size(D, 2)
+        X(:, i) = mapminmax(D(:, i).').';
     end
-return
+else
+    X = mapminmax(D);
+end
+end

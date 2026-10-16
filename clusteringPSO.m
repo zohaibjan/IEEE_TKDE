@@ -1,5 +1,5 @@
 function obj=clusteringPSO(allClusters, testData, params)
-warning('off','all');
+
 allPredictions = zeros(length(testData(:,end)), length(allClusters));
 for j = 1:length(allClusters)
     all = [];
