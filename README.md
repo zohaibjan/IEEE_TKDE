@@ -42,6 +42,10 @@ The seed is a starting point for recording runs; nested seed resets, parallel wo
 
 The silhouette search now excludes the label column, bounds K to available distinct feature rows, handles tiny classes and records feature-only centroids. Balancing and routing use the same raw feature space. The outer `eachClass` sweep is still overridden by silhouette selection; the CSV setting is not the fitted per-class K. ANN outputs now map through the training label vocabulary. PSO uses the same >0.4 selection rule during scoring and return, with a deterministic nonempty fallback. Auxiliary `accuracyOfPSO.m` still references an unprovided `confusionmatStats`; it is not the main path.
 
+## Runtime follow-up — October 2026
+
+BKS is combination method 10 (method 9 remains Dempster–Shafer). BKS matches observed training patterns directly instead of allocating an exponential table, uses the supplied training labels, and falls back to majority voting for unseen patterns. This is an implementation correction, not a reproduced research score.
+
 ## Correctness review — October 2026
 
 This pass fixes implementation defects; it does not validate the associated research results. Changes can alter model pools, predictions and measured scores. Re-run the experiments before comparing corrected code with historical CSVs or published results.
@@ -53,6 +57,6 @@ This pass fixes implementation defects; it does not validate the associated rese
 
 See [the code review](docs/code-review.md) for repository-specific changes, tests and remaining limitations.
 
-**Validation:** all MATLAB sources were statically parsed/linted with MISS_HIT. MATLAB and its learner toolboxes are unavailable in the review environment. The MATLAB regression suites and full training runs have **not been executed** here. Run `runtests('tests')` and `assertSuccess(results)` in MATLAB before using the corrected experiments.
+**Validation:** 22 regression/smoke tests passed in MATLAB R2024b on Linux through [GitHub Actions](https://github.com/zohaibjan/IEEE_TKDE/actions/workflows/matlab-tests.yml). Tests include real toolbox execution on synthetic data. Full research datasets and published accuracy results have not been reproduced. See [validation evidence and limits](docs/validation.md).
 
 [Profile and project directory](https://github.com/zohaibjan)
