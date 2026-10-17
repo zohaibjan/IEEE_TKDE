@@ -1,0 +1,29 @@
+name: MATLAB tests
+on:
+  push:
+    paths: ['**.m', 'tests/**', '.github/workflows/matlab-tests.yml']
+  pull_request:
+    paths: ['**.m', 'tests/**', '.github/workflows/matlab-tests.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  matlab:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          products: Statistics_and_Machine_Learning_Toolbox Deep_Learning_Toolbox Global_Optimization_Toolbox Parallel_Computing_Toolbox
+      - uses: matlab-actions/run-tests@v3
+        with:
+          select-by-folder: tests
+          test-results-junit: test-results/results.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-test-results
+          path: test-results/
+          if-no-files-found: ignore
