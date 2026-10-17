@@ -5,14 +5,16 @@ function testRootFunctionsLoad(testCase)
 root = fileparts(fileparts(mfilename('fullpath')));
 addpath(root);
 files = dir(fullfile(root, '*.m'));
+checked = 0;
 for k = 1:numel(files)
     file = fullfile(root, files(k).name);
     source = fileread(file);
     % Scripts are experiment entry points, not safe to execute in unit tests.
     cleaned = regexprep(source, '(?m)^\s*%[^\n]*', '');
-    if isempty(regexp(cleaned, '^\s*function\b', 'once'))
+    if isempty(regexp(cleaned, '^\s*function(?:\s|$)', 'once'))
         continue;
     end
+    checked = checked + 1;
     [~, name] = fileparts(file);
     try
         nargin(name); % Compile/load each function without running experiments.
@@ -21,4 +23,6 @@ for k = 1:numel(files)
         verifyFail(testCase, sprintf('%s: %s', files(k).name, exception.message));
     end
 end
+fprintf('Compiled %d root functions.\n',checked);
+verifyGreaterThan(testCase,checked,0);
 end
