@@ -96,58 +96,21 @@ switch (CombinitionMethod)
       mu=prod(b,2);
       [tmp,Ensemble_decision(t)]=max(mu);
     end
-  case {9} % Behavior Knowledge Space (BKS)
-    % This method is not written efficinetly at all :(
-    N_combinition=N_class^N_classifiers;
-    BKS_Table=zeros(N_combinition,N_class+2);
-    [combinitionsSerial,combinitions]=MakeBKScombinitions(N_class,N_classifiers);
-    for t=1:N_combinition
-      Comb=combinitions(t,:);
-      samples=[];
-      for L=1:N_classifiers
-        tmp=(Comb(L));
-        CLF_ind=Train_CM_ind{L};
-        samples=[samples, cat(2,CLF_ind{:,tmp})]; %samples that has this Comb
-      end
-      nbar=max(samples)-min(samples)+1;
-      Common=hist(samples,nbar);
-      CommonLabels=find(Common==N_classifiers) + min(samples)-1 ;
-      for c=1:N_class
-        BKS_Table(t,c)=length(find(TrainGroup(CommonLabels)==c));
-      end
+  case {10} % Behavior Knowledge Space (BKS)
+    % Match observed patterns directly: avoid an exponential N_class^N_classifiers table.
+    trainPatterns = zeros(N_train,N_classifiers);
+    for c=1:N_classifiers
+      trainPatterns(:,c) = CLF_Train_output(c).Abstract_level_output(:);
     end
-    [BKS_Table(:,N_class+1),BKS_Table(:,N_class+2)]=max(BKS_Table(:,1:3),[],2);
-    L=N_classifiers;
-    power=10.^(L-1:-1:0);
-    power=repmat(power,N_test,1);
-    abstract_output_serial=sum(Test_abstract_output'.*power,2);
-    for j=1:N_test
-      temp=find(combinitionsSerial==abstract_output_serial(j));
-      if BKS_Table(temp,N_class+1)~= 0
-        Ensemble_decision(j)=BKS_Table(temp,N_class+2);
+    for t=1:N_test
+      matches = all(bsxfun(@eq,trainPatterns,Test_abstract_output(:,t).'),2);
+      if any(matches)
+        Ensemble_decision(t) = mode(TrainTargets(matches));
       else
-        Ensemble_decision(j)=mode(Test_abstract_output(:,j));
+        Ensemble_decision(t) = mode(Test_abstract_output(:,t));
       end
     end
+  otherwise
+    error('Research:UnknownCombination', 'Combination method must be 1 through 10.');
 end
-end
-function [combinitionsSerial,combinitions]=MakeBKScombinitions(N_class,N_classifiers)
-N_vec=repmat(N_class,1,N_classifiers);
-N_combinition=prod(N_vec);
-N_col=length(N_vec);
-combinitions=zeros(N_combinition,N_col);
-for ii=1:1:N_col
-  if ii==1
-    combinitions(:,1)=kron(ones(prod(N_vec(2:end)),1),(1:N_vec(1)).');
-  elseif ii==N_col
-    combinitions(:,ii)=kron((1:N_vec(ii)).',ones(prod(N_vec(1:ii-1)),1));
-  else
-    combinitions(:,ii)=kron(ones(prod(N_vec(ii+1:end)),1),kron((1:N_vec(ii)).',ones(prod(N_vec(1:ii-1)),1)));
-  end
-end
-% Change to serial format; i.e. [ 1 3 4] converted to 134
-L=N_classifiers;
-power=10.^(L-1:-1:0);
-power=repmat(power,N_combinition,1);
-combinitionsSerial=sum(combinitions.*power,2);
 end
