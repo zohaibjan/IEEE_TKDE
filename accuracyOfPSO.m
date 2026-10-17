@@ -1,29 +1,20 @@
-function [accuracy, fMeasures, decisionMatrix, BCP]=accuracyOfPSO(classifiers, chromosome, testData)
-c = find(chromosome);
-X = testData(:, 1:end-1);
-y = testData(:,end);
-decisionMatrix = ones(length(testData(:,1)), length(c));
-for i=1:length(c)
-    try
-        if strcmp(classifiers{1,i}.name, 'SVM') == 1
-            decisionMatrix(:,i) = predict(classifiers{1,i}.model, X);
-        elseif strcmp(classifiers{1,i}.name, 'KNN') == 1
-            decisionMatrix(:,i) = predict(classifiers{1,i}.model, X);
-        elseif strcmp(classifiers{1,i}.name, 'DT') == 1
-            decisionMatrix(:,i) = predict(classifiers{1,i}.model, X);
-        elseif strcmp(classifiers{1,i}.name, 'NB') == 1
-            decisionMatrix(:,i) = predict(classifiers{1,i}.model, X);
-        elseif strcmp(classifiers{1,i}.name, 'DISCR') == 1
-            decisionMatrix(:,i) = predict(classifiers{1,i}.model, X);
-        elseif strcmp(classifiers{1,i}.name, 'ANN') == 1
-            decisionMatrix(:,i) = getNNPredict(classifiers{1,i}.model, X);
-        end
-    catch ME
-        disp(sprintf('IN ACCURACY OF PSO: %s',ME.identifier));
-        continue
-    end
+function [accuracy, fMeasures, decisionMatrix, BCP] = accuracyOfPSO(classifiers, chromosome, testData)
+%ACCURACYOFPSO Score the actual selected model indices without fabricated votes.
+if numel(chromosome) ~= numel(classifiers) || any(~ismember(chromosome(:), [0 1]))
+    error('Research:InvalidSelection', 'Supply one binary flag per classifier.');
 end
-decisionMatrix = mode(decisionMatrix, 2);
+selected = classifiers(logical(chromosome));
+decisionMatrix = votePredictions(predictionMatrix(selected, testData(:, 1:end-1)));
+y = numericLabels(testData(:, end));
 accuracy = mean(decisionMatrix == y);
+BCP = struct('SVM', 0, 'ANN', 0, 'DT', 0, 'KNN', 0, 'NB', 0, 'DISCR', 0);
+for i = 1:numel(selected)
+    name = selected{i}.name;
+    if ~isfield(BCP, name)
+        BCP.(name) = 0;
+    end
+    BCP.(name) = BCP.(name) + 1;
+end
+% This historical optional report still requires confusionmatStats on the path.
 fMeasures = confusionmatStats(y, decisionMatrix);
 end

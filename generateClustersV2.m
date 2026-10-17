@@ -1,38 +1,37 @@
-function [genClusters,eachClass] = generateClustersV2(train , params)
-totalClusters = 1;
-genClusters = {};
-dataClasses = unique(train(:,end))';
-avgClass = [];
-try
-if totalClusters == 1
-    [clusterIds, C, sum, D] = kmeans(train, 1, 'MaxIter', 24000);
-    genClusters{totalClusters}.train = train(find(clusterIds == 1), :);
-    genClusters{totalClusters}.centroid = C(1,:);
-    totalClusters = totalClusters + 1;
+function [genClusters, eachClass] = generateClustersV2(train, params)
+%GENERATECLUSTERSV2 Feature-only candidates with bounded silhouette search.
+% params is retained for compatibility; this path chooses K from training features.
+if isempty(train) || size(train, 2) < 2 || any(~isfinite(train(:)))
+    error('Research:InvalidTrainingData', 'Supply finite labelled training rows.');
 end
-
-for i=1:length(dataClasses)
-    Xtrain = train(train(:,end) == dataClasses(i),:);
-    if size(Xtrain,1) <= 2
-        params.eachClass = 1;
+classes = unique(train(:, end));
+genClusters = {struct('train', train, 'centroid', mean(train(:, 1:end-1), 1))};
+classCounts = ones(numel(classes), 1);
+for i = 1:numel(classes)
+    rows = train(train(:, end) == classes(i), :);
+    features = rows(:, 1:end-1);
+    maxK = min([20, size(features, 1) - 1, size(unique(features, 'rows'), 1)]);
+    k = 1;
+    if maxK >= 2
+        evaluation = evalclusters(features, 'kmeans', 'silhouette', 'KList', 2:maxK);
+        if isfinite(evaluation.OptimalK)
+            k = evaluation.OptimalK;
+        end
+    end
+    classCounts(i) = k;
+    if k == 1
+        ids = ones(size(features, 1), 1);
     else
-    rng('default');  % For reproducibility
-    eva = evalclusters(Xtrain,'kmeans','silhouette','KList',[1:20]);
-    params.eachClass = eva.OptimalK;
-    avgClass(i) = params.eachClass;
+        ids = kmeans(dataNormalize(features, 2), k, 'MaxIter', 24000);
     end
-    [clusterIds, C, sum, D] = kmeans(zscore(Xtrain), params.eachClass, 'MaxIter', 24000);
-    for j=1:params.eachClass
-        genClusters{totalClusters}.train = Xtrain(find(clusterIds == j), :);
-        genClusters{totalClusters}.centroid = C(j,:);
-        totalClusters = totalClusters + 1;
+    for j = 1:k
+        members = rows(ids == j, :);
+        if isempty(members)
+            continue;
+        end
+        genClusters{end + 1} = struct('train', members, ...
+            'centroid', mean(members(:, 1:end-1), 1));
     end
 end
-catch exc 
-    disp(fprintf('\nProblem with %s \n%s\n', params.p_name, exc.identifier));
+eachClass = mean(classCounts);
 end
-eachClass = mean(avgClass);
-end
-
-
- 

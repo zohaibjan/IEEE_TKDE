@@ -1,12 +1,8 @@
-function [target]=prepareTarget(Y)
-    dim=unique(Y);
-    id_matrix=eye(length(dim));
-    for i=1:size(Y,1)
-        for j=1:length(dim)
-            if(Y(i)==dim(j))
-                target(i,:)=id_matrix(j,:);
-            end
-        end
-    end
-
+function target = prepareTarget(Y)
+%PREPARETARGET One-hot columns follow sorted unique training labels.
+labels = numericLabels(Y);
+classes = unique(labels);
+[~, indices] = ismember(labels, classes);
+target = zeros(numel(labels), numel(classes));
+target(sub2ind(size(target), (1:numel(labels)).', indices)) = 1;
 end

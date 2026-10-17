@@ -1,9 +1,5 @@
-function acc = getNNAccuracy(net,data)
-    x = data(:, 1:end-1)';
-    t = prepareTarget(data(:,end))';
-    
-    y = net(x);
-    tind = vec2ind(t);
-    yind = vec2ind(y);
-    acc = mean (yind == tind);
+function acc = getNNAccuracy(net, data)
+%GETNNACCURACY Use the training vocabulary even if validation omits a class.
+labels = numericLabels(data(:, end));
+acc = mean(getNNPredict(net, data(:, 1:end-1)) == labels);
 end

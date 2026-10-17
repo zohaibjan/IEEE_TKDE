@@ -1,37 +1,29 @@
 function [balancedClusters, centroids] = balanceClusters(clusters, train)
-noOfClasses = unique(train(:,end));
-b_index = 1;
-balancedClusters = {};
-centroids = {};
-for i=1:size(clusters,2)
-    %% balance clusters of that class
-    balancedClusters{1,b_index} = clusters{1, i}.train;
-    majorClass = unique(clusters{1, i}.train(:,end));
-    centroids{1,i} = clusters{1, i}.centroid;
-    
-    if i==1
-        b_index = b_index + 1;
-        continue; 
+%BALANCECLUSTERS Add absent classes using feature-only Euclidean distances.
+classes = unique(train(:, end));
+balancedClusters = cell(1, numel(clusters));
+centroids = cell(1, numel(clusters));
+for i = 1:numel(clusters)
+    base = clusters{i}.train;
+    if isempty(base) || size(base, 2) ~= size(train, 2)
+        error('Research:InvalidCluster', 'Each cluster must contain labelled training rows.');
     end
-    for j=1:length(noOfClasses)
-        if majorClass ~= noOfClasses(j)
-            records = length(clusters{1, i}.train);
-            toAdd = train(train(:,end) == noOfClasses(j),:);
-            closestToCentroid = [];
-            for k=1:size(toAdd,1)
-                closestToCentroid(k,1) = norm(clusters{1, i}.centroid - (toAdd(k,:)));
-            end
-            [sorted, sorted_ids] = sort(closestToCentroid);
-            toAdd = toAdd(sorted_ids, :);
-            
-            if size(toAdd,1) >= records
-                balancedClusters{1,b_index} = [balancedClusters{1,b_index}; toAdd(1:records,:)];
-            else
-                balancedClusters{1,b_index} = [balancedClusters{1,b_index}; toAdd];
-            end
+    centroid = mean(base(:, 1:end-1), 1);
+    centroids{i} = centroid;
+    balancedClusters{i} = base;
+    if i == 1
+        continue; % The first cluster is the historical full-training baseline.
+    end
+    present = unique(base(:, end));
+    for j = 1:numel(classes)
+        if any(present == classes(j))
+            continue;
         end
-        
+        candidates = train(train(:, end) == classes(j), :);
+        offsets = bsxfun(@minus, candidates(:, 1:end-1), centroid);
+        [~, order] = sort(sum(offsets .^ 2, 2));
+        count = min(size(base, 1), size(candidates, 1));
+        balancedClusters{i} = [balancedClusters{i}; candidates(order(1:count), :)];
     end
-    b_index = b_index + 1;
 end
 end

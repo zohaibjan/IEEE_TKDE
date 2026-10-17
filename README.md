@@ -40,8 +40,19 @@ The seed is a starting point for recording runs; nested seed resets, parallel wo
 
 ## Review notes and reproducibility limits
 
-The outer `eachClass` sweep is overridden by silhouette-based selection inside `generateClustersV2.m`; do not interpret the CSV K column as the actual chosen per-class cluster count. The historical generator clusters labelled rows and mixes raw/scaled centroid conventions. Review that method against the paper before changing it. ANN predictions use output indices, so verify contiguous labels starting at 1. Auxiliary `accuracyOfPSO.m` refers to `confusionmatStats`, which is not supplied here.
+The silhouette search now excludes the label column, bounds K to available distinct feature rows, handles tiny classes and records feature-only centroids. Balancing and routing use the same raw feature space. The outer `eachClass` sweep is still overridden by silhouette selection; the CSV setting is not the fitted per-class K. ANN outputs now map through the training label vocabulary. PSO uses the same >0.4 selection rule during scoring and return, with a deterministic nonempty fallback. Auxiliary `accuracyOfPSO.m` still references an unprovided `confusionmatStats`; it is not the main path.
 
-The cleanup aligns function/file names, restores visible warnings, makes CSV handles close on errors, and tests constant-feature normalisation plus CSV append behaviour. MATLAB experiments and the new utility tests have **not** been executed in the cleanup environment, which has no MATLAB installation. Static parsing is not a reproduction of the paper.
+## Correctness review — October 2026
+
+This pass fixes implementation defects; it does not validate the associated research results. Changes can alter model pools, predictions and measured scores. Re-run the experiments before comparing corrected code with historical CSVs or published results.
+
+- Label conversion uses numeric category names, not categorical indices.
+- Voting rejects empty/nonfinite inputs; a prediction failure is reported rather than counted as a fabricated class-one vote.
+- Neural models store their training labels in `net.userdata.classLabels`. Retrain old models or restore that exact training vocabulary before prediction; inferring it from a validation subset is unsafe.
+- Synthetic checks cover normalization, CSV append behavior and the new prediction/selection boundaries. Additional cluster checks run where applicable.
+
+See [the code review](docs/code-review.md) for repository-specific changes, tests and remaining limitations.
+
+**Validation:** all MATLAB sources were statically parsed/linted with MISS_HIT. MATLAB and its learner toolboxes are unavailable in the review environment. The MATLAB regression suites and full training runs have **not been executed** here. Run `runtests('tests')` and `assertSuccess(results)` in MATLAB before using the corrected experiments.
 
 [Profile and project directory](https://github.com/zohaibjan)

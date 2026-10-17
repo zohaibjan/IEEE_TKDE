@@ -4,4 +4,5 @@ function net = trainNN(X, y)
     net = patternnet(10);
     net.trainParam.showWindow=0;
     net = train(net,x,t);
+net.userdata.classLabels = unique(y(:));
 end
